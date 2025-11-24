@@ -1,3 +1,4 @@
+// src/components/ReservationModal.tsx
 import React, { useState, useEffect } from 'react';
 import { Caravan } from '../data/caravans';
 import './ReservationModal.css';
@@ -8,27 +9,29 @@ interface ReservationModalProps {
   onSuccess: (name: string, caravanName: string) => void;
 }
 
-const ReservationModal: React.FC<ReservationModalProps> = ({ caravan, onClose, onSuccess }) => {
+const ReservationModal: React.FC<ReservationModalProps> = ({
+  caravan,
+  onClose,
+  onSuccess,
+}) => {
   const [bookerName, setBookerName] = useState('');
-  const [numberOfPeople, setNumberOfPeople] = useState(caravan.baseGuests); // Default to base guests
+  const [numberOfPeople, setNumberOfPeople] = useState(caravan.baseGuests); // 기본 인원
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
 
-  // Calculate the minimum bookable date (today + 2 days)
+  // 오늘 + 2일 후부터 예약 가능
   const minBookingDate = new Date();
   minBookingDate.setDate(minBookingDate.getDate() + 2);
   const minDateString = minBookingDate.toISOString().split('T')[0];
 
-  // Calculate total price whenever dates, people or caravan change
+  // 날짜/인원/카라반 변경될 때마다 총 금액 계산
   useEffect(() => {
-    // Calculate daily rate based on number of people
     let dailyRate = caravan.basePrice;
     if (numberOfPeople > caravan.baseGuests) {
       dailyRate += (numberOfPeople - caravan.baseGuests) * caravan.extraPersonPrice;
     }
 
-    // Calculate total price based on dates
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -46,47 +49,77 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ caravan, onClose, o
 
   const handlePeopleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = parseInt(e.target.value, 10);
-    if (isNaN(value)) {
-      value = 1;
-    }
-    if (value < 1) {
-      value = 1;
-    }
-    if (value > caravan.maxGuests) {
-      value = caravan.maxGuests;
-    }
+    if (isNaN(value)) value = 1;
+    if (value < 1) value = 1;
+    if (value > caravan.maxGuests) value = caravan.maxGuests;
     setNumberOfPeople(value);
   };
 
-  const handleReservation = () => {
+  const handleReservation = async () => {
     if (!bookerName || !startDate || !endDate || numberOfPeople <= 0) {
       alert('모든 필수 정보를 입력해주세요.');
       return;
     }
     if (new Date(startDate) > new Date(endDate)) {
-        alert('시작일은 종료일보다 빨라야 합니다.');
-        return;
+      alert('시작일은 종료일보다 빨라야 합니다.');
+      return;
     }
     if (numberOfPeople > caravan.maxGuests) {
       alert(`이 카라반의 최대 수용 인원은 ${caravan.maxGuests}명입니다.`);
       return;
     }
     if (totalPrice === 0) {
-        alert('유효한 날짜를 선택하여 가격을 계산해주세요.');
-        return;
+      alert('유효한 날짜를 선택하여 가격을 계산해주세요.');
+      return;
+    }
+    if (!caravan.backendId) {
+      alert('이 카라반의 서버 ID가 설정되어 있지 않습니다.');
+      return;
     }
 
-    onSuccess(bookerName, caravan.name);
+    try {
+      // 🔹 FastAPI로 예약 생성 요청
+      const res = await fetch('http://localhost:8000/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caravan_id: caravan.backendId, // uuid 사용
+          start_date: startDate,         // YYYY-MM-DD
+          end_date: endDate,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || '예약 생성에 실패했습니다.');
+      }
+
+      // 🔹 백엔드에서도 성공했을 때만 상위 컴포넌트에 성공 알림
+      onSuccess(bookerName, caravan.name);
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || '예약 처리 중 오류가 발생했습니다.');
+    }
   };
 
   return (
     <div className="modal-backdrop">
       <div className="modal-content">
-        <button className="modal-close-button" onClick={onClose}>X</button>
+        <button className="modal-close-button" onClick={onClose}>
+          X
+        </button>
+
         <h2>{caravan.name} 예약</h2>
         <p>최대 수용 인원: {caravan.maxGuests}명</p>
-        <img src={caravan.imageUrl} alt={caravan.name} className="modal-caravan-image" />
+
+        <img
+          src={caravan.imageUrl}
+          alt={caravan.name}
+          className="modal-caravan-image"
+        />
+
         <p className="modal-caravan-description">{caravan.description}</p>
+
         <div className="modal-caravan-price">
           <div>기본 {caravan.baseGuests}인: ₩{caravan.basePrice.toLocaleString()}/일</div>
           {caravan.extraPersonPrice > 0 && (
@@ -106,13 +139,15 @@ const ReservationModal: React.FC<ReservationModalProps> = ({ caravan, onClose, o
         </div>
 
         <div className="form-group">
-          <label htmlFor="numberOfPeople">인원 (최대 {caravan.maxGuests}명):</label>
+          <label htmlFor="numberOfPeople">
+            인원 (최대 {caravan.maxGuests}명):
+          </label>
           <input
             type="number"
             id="numberOfPeople"
             value={numberOfPeople}
             onChange={handlePeopleChange}
-            min="1"
+            min={1}
             max={caravan.maxGuests}
             required
           />

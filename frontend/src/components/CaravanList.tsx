@@ -1,12 +1,13 @@
 import React from 'react';
-import { caravans, Caravan } from '../data/caravans';
+import { Caravan } from '../data/caravans';
 import './CaravanList.css';
 
 interface CaravanListProps {
+  caravans: Caravan[];
   onBook: (caravan: Caravan) => void;
 }
 
-const CaravanList: React.FC<CaravanListProps> = ({ onBook }) => {
+const CaravanList: React.FC<CaravanListProps> = ({ caravans, onBook }) => {
   return (
     <div className="caravan-list-container">
       {caravans.map((caravan: Caravan) => (
@@ -16,7 +17,9 @@ const CaravanList: React.FC<CaravanListProps> = ({ onBook }) => {
             <h3>{caravan.name}</h3>
             <p>{caravan.description}</p>
             <div className="caravan-booking">
-              <span className="caravan-price">₩{caravan.basePrice.toLocaleString()} / 일 (기본 {caravan.baseGuests}인)</span>
+              <span className="caravan-price">
+                ₩{caravan.basePrice.toLocaleString()} / 일 (기본 {caravan.baseGuests}인)
+              </span>
               <button className="book-now-button" onClick={() => onBook(caravan)}>
                 지금 예약하기
               </button>

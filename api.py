@@ -1,3 +1,5 @@
+# api.py
+
 import uuid
 from datetime import date
 from fastapi import FastAPI, HTTPException
@@ -6,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # src 폴더의 모듈들을 가져옵니다.
 from src.models.user import User, UserRole
-from src.models.caravan import Caravan, CaravanStatus
+from src.models.caravan import Caravan
 from src.repositories.user_repository import UserRepository
 from src.repositories.caravan_repository import CaravanRepository
 from src.repositories.reservation_repository import ReservationRepository
@@ -41,7 +43,7 @@ def setup_dependencies():
     reservation_service = ReservationService(
         reservation_repo, caravan_repo, user_repo, validator
     )
-    
+
     # 초기 데이터 생성
     if not user_repo.get_all():
         host = User(name="Host Alice", contact="host@example.com", role=UserRole.HOST)
@@ -49,25 +51,45 @@ def setup_dependencies():
         user_repo.add(host)
         user_repo.add(guest)
 
+        # 🔹 4개의 카라반 등록 (프론트 UI와 이름 맞춤)
         caravan1 = Caravan(
             host_id=host.id,
-            name="Cozy Camper",
+            name="모던 익스플로러",
             location="Seoul",
-            capacity=4,
-            daily_rate=150.0
+            capacity=2,
+            daily_rate=120000.0,
         )
         caravan2 = Caravan(
             host_id=host.id,
-            name="Luxury Land-Yacht",
+            name="패밀리 보이저",
             location="Busan",
             capacity=6,
-            daily_rate=250.0
+            daily_rate=180000.0,
         )
+        caravan3 = Caravan(
+            host_id=host.id,
+            name="레트로 어드벤처러",
+            location="Incheon",
+            capacity=3,
+            daily_rate=95000.0,
+        )
+        caravan4 = Caravan(
+            host_id=host.id,
+            name="오프로드 비스트",
+            location="Jeju",
+            capacity=4,
+            daily_rate=250000.0,
+        )
+
         caravan_repo.add(caravan1)
         caravan_repo.add(caravan2)
-        
+        caravan_repo.add(caravan3)
+        caravan_repo.add(caravan4)
+
     return user_repo, caravan_repo, reservation_repo, reservation_service
 
+
+# 전역에서 사용할 리포지토리/서비스 인스턴스
 user_repo, caravan_repo, reservation_repo, reservation_service = setup_dependencies()
 
 # --- Pydantic 모델 (데이터 유효성 검사) ---
@@ -86,9 +108,11 @@ def get_caravans():
 def create_reservation(request: ReservationRequest):
     """새로운 예약을 생성합니다."""
     try:
-        # 현재는 CLI에서 사용하던 'guest' 사용자를 하드코딩하여 사용합니다.
-        # 향후 실제 사용자 인증 시스템이 도입되면 이 부분을 수정해야 합니다.
-        guest = next((user for user in user_repo.get_all() if user.role == UserRole.GUEST), None)
+        # 현재는 GUEST 역할의 첫 번째 사용자를 예약자라고 가정
+        guest = next(
+            (user for user in user_repo.get_all() if user.role == UserRole.GUEST),
+            None,
+        )
         if not guest:
             raise HTTPException(status_code=404, detail="Guest user not found.")
 
@@ -96,7 +120,7 @@ def create_reservation(request: ReservationRequest):
             guest_id=guest.id,
             caravan_id=request.caravan_id,
             start_date=request.start_date,
-            end_date=request.end_date
+            end_date=request.end_date,
         )
         return new_reservation
     except ReservationError as e:
@@ -107,4 +131,3 @@ def create_reservation(request: ReservationRequest):
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the CaravanShare API"}
-
