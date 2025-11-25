@@ -5,12 +5,24 @@ import { Caravan, caravans as staticCaravans } from './data/caravans';
 import ReservationModal from './components/ReservationModal';
 import { fetchCaravans, BackendCaravan } from './api/caravan';
 
+import AuthPanel from './components/AuthPanel';
+import type { LoginResponse } from './api/auth';
+
 function App() {
+  const [currentUser, setCurrentUser] = useState<LoginResponse | null>(null);
   const [bookingCaravan, setBookingCaravan] = useState<Caravan | null>(null);
   const [reservationMessage, setReservationMessage] = useState('');
   const [caravans, setCaravans] = useState<Caravan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = (user: LoginResponse) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+  };
 
   useEffect(() => {
     const loadCaravans = async () => {
@@ -66,6 +78,14 @@ function App() {
       <header className="App-header">
         <h1>CaravanShare에 오신 것을 환영합니다</h1>
         <p>카라반 렌탈과 모험을 위한 원스톱 솔루션입니다.</p>
+
+        
+        {/* 🔐 로그인 / 회원가입 패널 */}
+        <AuthPanel
+          currentUser={currentUser}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+        />
       </header>
       <main>
         {reservationMessage && (

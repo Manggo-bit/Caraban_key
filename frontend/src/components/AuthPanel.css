@@ -1,0 +1,22 @@
+/* src/components/AuthPanel.css */
+.auth-panel {
+  margin-top: 1rem;
+}
+
+.auth-tabs {
+  margin-bottom: 0.5rem;
+}
+
+.auth-tabs button.active {
+  font-weight: bold;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.9rem;
+}
+
+.info-message {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
