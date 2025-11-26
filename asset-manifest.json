@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Caraban_key/static/css/main.9d8f5aaa.css",
+    "main.js": "/Caraban_key/static/js/main.b735184a.js",
+    "static/js/453.d7446e4a.chunk.js": "/Caraban_key/static/js/453.d7446e4a.chunk.js",
+    "index.html": "/Caraban_key/index.html",
+    "main.9d8f5aaa.css.map": "/Caraban_key/static/css/main.9d8f5aaa.css.map",
+    "main.b735184a.js.map": "/Caraban_key/static/js/main.b735184a.js.map",
+    "453.d7446e4a.chunk.js.map": "/Caraban_key/static/js/453.d7446e4a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.9d8f5aaa.css",
+    "static/js/main.b735184a.js"
+  ]
+}
